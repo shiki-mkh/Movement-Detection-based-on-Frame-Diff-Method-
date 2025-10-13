@@ -10,11 +10,11 @@ module IMGD_TOP #(
     input               ov5640_href,     // 行同步信号
     input       [7:0]   ov5640_data,     // 摄像头数据输入
 
-    // === 输出结果（目标外接矩形） ===
-    output      [9:0]   x_min_out,
-    output      [9:0]   x_max_out,
-    output      [9:0]   y_min_out,
-    output      [9:0]   y_max_out
+    // === 输出：带矩形标记的图像 ===
+    output              post_frame_vsync,
+    output              post_frame_href,
+    output              post_frame_clken,
+    output      [15:0]  post_img_Y
 );
 
     // =========================================================
@@ -140,7 +140,7 @@ module IMGD_TOP #(
     wire                dilation_clken;
     wire                dilation_img_Bit;
 
-    VIP_Bit_Dilation_7x7 #(
+    Dilation #(
         .IMG_HDISP(IMG_HDISP),
         .IMG_VDISP(IMG_VDISP)
     ) u_dilation (
@@ -157,22 +157,32 @@ module IMGD_TOP #(
     );
 
     // =========================================================
-    // 7. 目标外接矩形提取 (Bound Box)
+    // 7️⃣  rectangle 模块
     // =========================================================
-    DrawBoundingBox #(
+    rectangle #(
         .IMG_WIDTH  (IMG_HDISP),
         .IMG_HEIGHT (IMG_VDISP)
-    ) u_bound (
-        .clk            (ov5640_pclk),
-        .rst_n          (rst_n),
-        .morph_valid    (dilation_clken),
-        .morph_pixel    (dilation_img_Bit),
-        .href_o         (dilation_href),
-        .vsync_o        (dilation_vsync),
-        .x_min_out      (x_min_out),
-        .x_max_out      (x_max_out),
-        .y_min_out      (y_min_out),
-        .y_max_out      (y_max_out)
+    ) u_rectangle (
+        .clk                (ov5640_pclk),
+        .rst_n              (rst_n),
+
+        // 检测到的二值图像（用于边界检测）
+        .per_frame_vsync    (dilation_vsync),
+        .per_frame_href     (dilation_href),
+        .per_frame_clken    (dilation_clken),
+        .per_img_Y          (dilation_img_Bit),
+
+        // 原始 RGB 图像（来自 DVP 控制器）
+        .cmos_frame_vsync   (dvp_vsync),
+        .cmos_frame_href    (dvp_href),
+        .cmos_frame_clken   (dvp_valid),
+        .cmos_frame_data    (dvp_data),
+
+        // 输出：带红色矩形标记的图像
+        .post_frame_vsync   (post_frame_vsync),
+        .post_frame_href    (post_frame_href),
+        .post_frame_clken   (post_frame_clken),
+        .post_img_Y         (post_img_Y)
     );
 
 endmodule
