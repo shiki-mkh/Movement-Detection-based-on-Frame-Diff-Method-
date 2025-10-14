@@ -1,5 +1,5 @@
 `timescale 1ns/1ns
-module VIP_Bit_Dilation_7x7
+module Dilation
 #(
     parameter   [9:0]   IMG_HDISP = 10'd640,   // 图像水平分辨率
     parameter   [9:0]   IMG_VDISP = 10'd480    // 图像垂直分辨率
