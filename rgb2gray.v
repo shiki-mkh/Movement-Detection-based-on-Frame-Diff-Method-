@@ -1,4 +1,4 @@
-module RGB565_to_Gray_pipeline (
+module rgb2gray (
     input  wire        clk,
     input  wire        rst_n,
     

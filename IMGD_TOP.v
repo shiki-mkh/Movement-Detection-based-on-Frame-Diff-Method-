@@ -4,38 +4,28 @@ module IMGD_TOP #(
     parameter IMG_HDISP = 10'd640,
     parameter IMG_VDISP = 10'd480
 )(
+    input               clk,             // 系统时钟，建议 50MHz 或更高
     input               rst_n,           // 复位信号
-    input               ov5640_pclk,     // 摄像头像素时钟
-    input               ov5640_vsync,    // 场同步信号
-    input               ov5640_href,     // 行同步信号
-    input       [7:0]   ov5640_data,     // 摄像头数据输入
+    input                dvp_vsync,  //帧有效信号    
+    input                dvp_href ,  //行有效信号
+    input                dvp_valid,  //数据有效使能信号
+    input       [15:0]   dvp_data,   //有效数据  
 
     // === 输出：带矩形标记的图像 ===
     output              post_frame_vsync,
     output              post_frame_href,
     output              post_frame_clken,
-    output      [15:0]  post_img_Y
+    output      [15:0]  post_img_Y,
+
+    input  [15:0]  sys_data_out1,//sdram
+	output         gs_clken ,
+	output  [15:0] gray_sft ,
+	output         sdr_rd 
+	
+    //thresould 设置为定值8'd30
 );
 
-    // =========================================================
-    // 1. CMOS 数据采集模块
-    // =========================================================
-    wire                dvp_vsync;
-    wire                dvp_href;
-    wire                dvp_valid;
-    wire        [15:0]  dvp_data;
-
-    cmos_capture_data u_cmos_capture_data (
-        .rst_n          (rst_n),
-        .ov5640_pclk    (ov5640_pclk),
-        .ov5640_vsync   (ov5640_vsync),
-        .ov5640_href    (ov5640_href),
-        .ov5640_data    (ov5640_data),
-        .dvp_vsync      (dvp_vsync),
-        .dvp_href       (dvp_href),
-        .dvp_valid      (dvp_valid),
-        .dvp_data       (dvp_data)
-    );
+    
 
     // =========================================================
     // 2. RGB 转灰度
@@ -45,13 +35,15 @@ module IMGD_TOP #(
     wire                gray_href;
     wire        [7:0]   gray_data;
 
-    RGB565_to_Gray_pipeline u_rgb2gray (
+    rgb2gray u_rgb2gray (
         .clk            (ov5640_pclk),
         .rst_n          (rst_n),
+
         .dvp_vsync      (dvp_vsync),
         .dvp_href       (dvp_href),
         .dvp_valid      (dvp_valid),
         .dvp_data       (dvp_data),
+
         .gray_valid     (gray_valid),
         .gray_vsync     (gray_vsync),
         .gray_href      (gray_href),
@@ -67,17 +59,19 @@ module IMGD_TOP #(
     wire                ajct_href;
     wire                ajct_clken;
 
-    // 这里假设 gray_sdr 来源于一帧延迟缓存，可先置零或从SDRAM控制器接入
-    wire [7:0] gray_sdr = 8'd0;  // 若无SDRAM控制，此处可用延迟FIFO代替
+   assign gs_clken = ajct_clken;
+   assign gray_sft = ajct_gray;
 
     frame_adjacent_sync u_frame_adj_sync (
         .clk            (ov5640_pclk),
         .rst_n          (rst_n),
+
         .clken          (gray_valid),
         .gray_vsync     (gray_vsync),
         .gray_href      (gray_href),
         .gray_data      (gray_data),
-        .gray_sdr       (gray_sdr),   // TODO: 前一帧灰度图（待实际连接）
+        .gray_sdr       (sys_data_out1),   // TODO: 前一帧灰度图（待实际连接）
+        
         .sdr_rd         (sdr_rd),
         .ajct_gray      (ajct_gray),
         .ajct_vsync     (ajct_vsync),
@@ -98,10 +92,12 @@ module IMGD_TOP #(
     ) u_binarization (
         .clk                (ov5640_pclk),
         .rst_n              (rst_n),
+
         .ajct_clken         (ajct_clken),
         .ajct_href          (ajct_href),
         .ajct_vsync         (ajct_vsync),
         .ajct_gray          (ajct_gray),
+
         .binarize_clken     (binarize_clken),
         .binarize_href      (binarize_href),
         .binarize_vsync     (binarize_vsync),

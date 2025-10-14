@@ -1,4 +1,4 @@
-module cmos_capture_data(
+module DVP_ctrl(
     input                 rst_n        ,  //复位信号
     //摄像头接口
     input                 ov5640_pclk  ,  //cmos 数据像素时钟
