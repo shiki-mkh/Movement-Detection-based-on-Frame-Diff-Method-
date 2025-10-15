@@ -260,20 +260,24 @@ module Project_TOP (
     //---------------------------------------------
     // VGA Display
     //---------------------------------------------
-    vga_display u_vga_display (
-        .vga_clk    (clk_vga),
-        .rst_n      (sys_rst_n),
-		
-        .fifo_data  (sys_data_out2),
-        .fifo_empty (RD2_EMPTY),
-        .fifo_rdreq (sys_rd2),   //读使能
+    VGA_ctrl u_VGA_ctrl (
+    .vga_clk    (clk_vga),
+    .rst_n      (sys_rst_n),
 
-        .vga_r      (vga_r),
-        .vga_g      (vga_g),
-        .vga_b      (vga_b),
-        .vga_hs     (vga_hs),
-        .vga_vs     (vga_vs),
-        .vga_valid  ()
-    );
+    // SDRAM 双读口2 接口
+    .fifo_data  (sys_data_out2),
+    .fifo_empty (RD2_EMPTY),
+    .fifo_rdreq (sys_rd2),
+
+    // VGA 输出
+    .vga_r      (vga_r),
+    .vga_g      (vga_g),
+    .vga_b      (vga_b),
+    .vga_hs     (vga_hs),
+    .vga_vs     (vga_vs),
+    .vga_valid  ()
+);
+
+
 
 endmodule
