@@ -27,8 +27,7 @@ wire [4:0]      matrix [0:4];    // 5x5 矩阵
 
 matrix_gen_5    
 #(
-    .IMG_HDISP  (IMG_HDISP),
-    .IMG_VDISP  (IMG_VDISP)
+    .IMG_HDISP  (IMG_HDISP)
 )
 u_matrix_gen_5
 (

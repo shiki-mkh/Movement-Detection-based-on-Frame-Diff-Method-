@@ -21,15 +21,15 @@ module VGA_ctrl #(
 );
 
     // VGA Timing Parameters (640x480@60Hz)
-    parameter H_SYNC  = 96;
-    parameter H_BACK  = 48;
-    parameter H_FRONT = 16;
-    parameter H_TOTAL = H_SYNC + H_BACK + H_DISP + H_FRONT;
+    localparam  H_SYNC  = 96;
+    localparam  H_BACK  = 48;
+    localparam  H_FRONT = 16;
+    localparam  H_TOTAL = H_SYNC + H_BACK + H_DISP + H_FRONT;
 
-    parameter V_SYNC  = 2;
-    parameter V_BACK  = 33;
-    parameter V_FRONT = 10;
-    parameter V_TOTAL = V_SYNC + V_BACK + V_DISP + V_FRONT;
+    localparam  V_SYNC  = 2;
+    localparam  V_BACK  = 33;
+    localparam  V_FRONT = 10;
+    localparam  V_TOTAL = V_SYNC + V_BACK + V_DISP + V_FRONT;
 
     reg [10:0] h_cnt;
     reg [9:0]  v_cnt;

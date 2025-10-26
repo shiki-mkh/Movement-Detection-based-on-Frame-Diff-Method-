@@ -28,8 +28,7 @@ wire            matrix_frame_clken;
 wire [6:0]      matrix [0:6];
 
 matrix_gen_7  #(
-    .IMG_HDISP  (IMG_HDISP),
-    .IMG_VDISP  (IMG_VDISP)
+    .IMG_HDISP  (IMG_HDISP)
 )
 u_matrix_gen_7(
     .clk                (clk),

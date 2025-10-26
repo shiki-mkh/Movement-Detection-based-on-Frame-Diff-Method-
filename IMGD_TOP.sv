@@ -36,7 +36,7 @@ module IMGD_TOP #(
     wire        [7:0]   gray_data;
 
     rgb2gray u_rgb2gray (
-        .clk            (ov5640_pclk),
+        .clk            (clk),
         .rst_n          (rst_n),
 
         .dvp_vsync      (dvp_vsync),
@@ -53,7 +53,6 @@ module IMGD_TOP #(
     // =========================================================
     // 3. 帧同步模块（两帧对齐）
     // =========================================================
-    wire                sdr_rd;
     wire        [15:0]  ajct_gray;
     wire                ajct_vsync;
     wire                ajct_href;
@@ -63,7 +62,7 @@ module IMGD_TOP #(
    assign gray_sft = ajct_gray;
 
     frame_adjacent_sync u_frame_adj_sync (
-        .clk            (ov5640_pclk),
+        .clk            (clk),
         .rst_n          (rst_n),
 
         .clken          (gray_valid),
@@ -90,7 +89,7 @@ module IMGD_TOP #(
     Binarization #(
         .THRESHOLD(8'd30)
     ) u_binarization (
-        .clk                (ov5640_pclk),
+        .clk                (clk),
         .rst_n              (rst_n),
 
         .ajct_clken         (ajct_clken),
@@ -116,7 +115,7 @@ module IMGD_TOP #(
         .IMG_HDISP(IMG_HDISP),
         .IMG_VDISP(IMG_VDISP)
     ) u_erosion (
-        .clk                (ov5640_pclk),
+        .clk                (clk),
         .rst_n              (rst_n),
         .binarize_vsync     (binarize_vsync),
         .binarize_href      (binarize_href),
@@ -140,7 +139,7 @@ module IMGD_TOP #(
         .IMG_HDISP(IMG_HDISP),
         .IMG_VDISP(IMG_VDISP)
     ) u_dilation (
-        .clk                (ov5640_pclk),
+        .clk                (clk),
         .rst_n              (rst_n),
         .erosion_vsync      (erosion_vsync),
         .erosion_href       (erosion_href),
@@ -159,7 +158,7 @@ module IMGD_TOP #(
         .IMG_WIDTH  (IMG_HDISP),
         .IMG_HEIGHT (IMG_VDISP)
     ) u_rectangle (
-        .clk                (ov5640_pclk),
+        .clk                (clk),
         .rst_n              (rst_n),
 
         // 检测到的二值图像（用于边界检测）
