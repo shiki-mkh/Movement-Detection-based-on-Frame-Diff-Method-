@@ -26,11 +26,17 @@ module Project_TOP (
     inout         cam_sda,
 
     // VGA output
-    output [4:0]  vga_r,
-    output [5:0]  vga_g,
-    output [4:0]  vga_b,
-    output        vga_hs,
-    output        vga_vs
+    //output [4:0]  vga_r,
+    //output [5:0]  vga_g,
+    //output [4:0]  vga_b,
+    //output        vga_hs,
+    //output        vga_vs
+
+    //HDMI 接口
+    output       tmds_clk_p,    // TMDS 时钟通道
+    output       tmds_clk_n,
+    output [2:0] tmds_data_p,   // TMDS 数据通道
+    output [2:0] tmds_data_n
 );
 
     //---------------------------------------------
@@ -42,19 +48,33 @@ module Project_TOP (
     wire clk_refout;
     wire clk_vga;
     wire clk_48M;
-    wire cam_xclk;
+
+    wire  locked_hdmi;
+    wire  rst_hdmi   ;
+    wire  hdmi_clk;
+    wire  hdmi_clk_5;
+
+    wire  clk_sdram;
 
     system_ctrl_pll u_system_ctrl_pll (
         .clk       (clk),
         .rst_n     (rst_n),
         .sys_rst_n (pll_rst_n),
         .clk_c0    (clk_ref),      // 100MHz
-        .clk_c1    (),   //
+        .clk_c1    (clk_sdram),   //
         .clk_c2    (clk_vga),      // 25MHz VGA clock
         .clk_c3    (),     
         .clk_c4    ()
     );
 
+    pll_hdmi	pll_hdmi_inst (
+	.areset 			( ~rst_n  ),
+	.inclk0 			( clk     ),
+	.c0 				( hdmi_clk    ),//hdmi pixel clock 71Mhz
+	.c1 				( hdmi_clk_5  ),//hdmi pixel clock*5 355Mhz
+	.locked 			( locked_hdmi )
+	);
+    
     assign sys_rst_n = pll_rst_n;
 
     //---------------------------------------------
@@ -158,7 +178,7 @@ module Project_TOP (
 
     // Read port2: VGA 读取
     wire [15:0] sys_data_out2;
-    wire sdr_rd2_clk = clk_vga;
+    wire sdr_rd2_clk = hdmi_clk;
     wire sys_rd2;
     wire RD2_EMPTY;
     wire sdram_init_done;
@@ -196,7 +216,7 @@ module Project_TOP (
     SDRAM_ctrl_TOP u_SDRAM_ctrl_TOP (
         // HOST Side
         .REF_CLK(clk_ref),
-        .OUT_CLK(),
+        .OUT_CLK(clk_sdram),
         .RESET_N(sys_rst_n),
 
         // Write port1
@@ -260,24 +280,45 @@ module Project_TOP (
     //---------------------------------------------
     // VGA Display
     //---------------------------------------------
-    VGA_ctrl u_VGA_ctrl (
-    .vga_clk    (clk_vga),
-    .rst_n      (sys_rst_n),
-
-    // SDRAM 双读口2 接口
-    .fifo_data  (sys_data_out2),
-    .fifo_empty (RD2_EMPTY),
-    .fifo_rdreq (sys_rd2),
-
-    // VGA 输出
-    .vga_r      (vga_r),
-    .vga_g      (vga_g),
-    .vga_b      (vga_b),
-    .vga_hs     (vga_hs),
-    .vga_vs     (vga_vs),
-    .vga_valid  ()
-);
-
+    //VGA_ctrl u_VGA_ctrl (
+    //.vga_clk    (clk_vga),
+    //.rst_n      (sys_rst_n),
+    //
+    //// SDRAM 双读口2 接口
+    //.fifo_data  (sys_data_out2),
+    //.fifo_empty (RD2_EMPTY),
+    //.fifo_rdreq (sys_rd2),
+    //
+    //// VGA 输出
+    //.vga_r      (vga_r),
+    //.vga_g      (vga_g),
+    //.vga_b      (vga_b),
+    //.vga_hs     (vga_hs),
+    //.vga_vs     (vga_vs),
+    //.vga_valid  ()
+    //);
+    wire  [23:0	] hdmi_data; 
+    assign  hdmi_data = {sys_data_out2[15:11],sys_data_out2[15:13],sys_data_out2[10:5],sys_data_out2[10:9],
+                    sys_data_out2[4:0],sys_data_out2[4:2]};
+                    
+    //例化HDMI顶层模块
+    hdmi_top u_hdmi_top(
+    .hdmi_clk       (hdmi_clk   ),
+    .hdmi_clk_5     (hdmi_clk_5 ),
+    .rst_n          (sys_rst_n      ),
+                
+    .rd_data        (hdmi_data    ),
+    .rd_en          (sys_rd2      ), 
+    .h_disp         (),	 
+    .v_disp         (),
+    .pixel_xpos     (),
+    .pixel_ypos     (),
+    .video_vs       (),	 
+    .tmds_clk_p     (tmds_clk_p ),
+    .tmds_clk_n     (tmds_clk_n ),
+    .tmds_data_p    (tmds_data_p),
+    .tmds_data_n    (tmds_data_n)
+    );
 
 
 endmodule
